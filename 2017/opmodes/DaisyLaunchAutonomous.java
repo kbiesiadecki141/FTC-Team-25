@@ -16,7 +16,7 @@ import team25core.SingleShotTimerTask;
 /**
  * FTC Team 25: Created by Katelyn Biesiadecki on 11/5/2016.
  */
-@Autonomous(name = "Daisy: Autonomous", group = "Team25")
+@Autonomous(name = "Daisy: Launch Autonomous", group = "Team25")
 public class DaisyLaunchAutonomous extends Robot
 {
     private DcMotor frontLeft;
@@ -28,9 +28,11 @@ public class DaisyLaunchAutonomous extends Robot
     private DeadReckonTask deadReckonTask;
     private RunToEncoderValueTask runToPositionTask;
     private SingleShotTimerTask stt;
+    private SingleShotTimerTask launchWait;
     private boolean launched;
     private PersistentTelemetryTask ptt;
     private FourWheelGearedDriveDeadReckon path;
+    private FourWheelGearedDriveDeadReckon smallStraight;
     private final int TICKS_PER_INCH = DaisyConfiguration.TICKS_PER_INCH;
     private final int TICKS_PER_DEGREE = DaisyConfiguration.TICKS_PER_DEGREE;
     private final double STRAIGHT_SPEED = DaisyConfiguration.STRAIGHT_SPEED;
@@ -73,10 +75,10 @@ public class DaisyLaunchAutonomous extends Robot
                 ptt.addData("ALLIANCE", "Red");
             } else if (event.kind == GamepadTask.EventKind.LEFT_TRIGGER_DOWN) {
                 pathChoice = AutonomousPath.CORNER_PARK;
-                ptt.addData("AUTONOMOUS", "Corner Park");
+                ptt.addData("PARK", "Corner Park");
             } else if (event.kind == GamepadTask.EventKind.RIGHT_TRIGGER_DOWN) {
                 pathChoice = AutonomousPath.CENTER_PARK;
-                ptt.addData("AUTONOMOUS", "Center Park");
+                ptt.addData("PARK", "Center Park");
             } else if (event.kind == GamepadTask.EventKind.LEFT_BUMPER_DOWN) {
                 actionChoice = AutonomousAction.LAUNCH_1;
                 ptt.addData("AUTONOMOUS", "Launch 1 Ball");
@@ -120,8 +122,8 @@ public class DaisyLaunchAutonomous extends Robot
                 frontLeft, frontRight, rearLeft, rearRight);
 
         if (pathChoice == AutonomousPath.CORNER_PARK) {
-            path.addSegment(DeadReckon.SegmentType.STRAIGHT,  63, STRAIGHT_SPEED);
-            path.addSegment(DeadReckon.SegmentType.TURN,     155, TURN_SPEED * turnMultiplier);
+            path.addSegment(DeadReckon.SegmentType.STRAIGHT,  59, STRAIGHT_SPEED);
+            path.addSegment(DeadReckon.SegmentType.TURN,     165, TURN_SPEED * turnMultiplier);
             path.addSegment(DeadReckon.SegmentType.STRAIGHT,  80, STRAIGHT_SPEED);
         } else if (pathChoice == AutonomousPath.CENTER_PARK) {
             path.addSegment(DeadReckon.SegmentType.STRAIGHT,  60, STRAIGHT_SPEED);
@@ -158,6 +160,7 @@ public class DaisyLaunchAutonomous extends Robot
         launcher.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         stt = new SingleShotTimerTask(this, 2000);
+        launchWait = new SingleShotTimerTask(this, 500);
         launched = false;
 
         // Telemetry setup.
@@ -170,9 +173,13 @@ public class DaisyLaunchAutonomous extends Robot
         ptt.addData("Press (LEFT BUMPER) to select", "Launch 1 Ball!");
         ptt.addData("Press (RIGHT BUMPER) to select", "Launch 2 Balls!");
 
-
         // Alliance selection.
         this.addTask(new GamepadTask(this, GamepadTask.GamepadNumber.GAMEPAD_1));
+
+        // Small straight segment.
+        smallStraight = new FourWheelGearedDriveDeadReckon(this, TICKS_PER_INCH, TICKS_PER_DEGREE,
+                frontLeft, frontRight, rearLeft, rearRight);
+        smallStraight.addSegment(DeadReckon.SegmentType.STRAIGHT, 4, STRAIGHT_SPEED);
     }
 
     @Override
@@ -181,7 +188,16 @@ public class DaisyLaunchAutonomous extends Robot
         path = pathSetup(pathChoice);
         deadReckonTask = new DeadReckonTask(this, path);
 
-        addTask(runToPositionTask);
-        //addTask(deadReckonTask);
+        addTask(new DeadReckonTask(this, smallStraight) {
+            @Override
+            public void handleEvent(RobotEvent e)
+            {
+                DeadReckonEvent event = (DeadReckonEvent) e;
+
+                if (event.kind == EventKind.PATH_DONE) {
+                    addTask(launchWait);
+                }
+            }
+        });
     }
 }
