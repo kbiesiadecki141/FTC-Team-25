@@ -52,6 +52,7 @@ public abstract class Robot extends OpMode {
             return;
         }
 
+        telemetry.update();
         loop();
     }
 
@@ -81,5 +82,6 @@ public abstract class Robot extends OpMode {
             e = events.poll();
         }
 
+        telemetry.update();
     }
 }
