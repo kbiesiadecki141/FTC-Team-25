@@ -1,5 +1,6 @@
 package test;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -8,6 +9,7 @@ import team25core.Robot;
 import team25core.RobotEvent;
 
 @TeleOp(name = "Collection Mechanism Test", group = "Team25")
+@Disabled
 public class CollectionPrototypeTest extends Robot {
     private Servo leftArm;
     private Servo rightArm;

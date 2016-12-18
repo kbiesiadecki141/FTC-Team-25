@@ -1,6 +1,7 @@
 package opmodes;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DeviceInterfaceModule;
@@ -22,7 +23,8 @@ import team25core.SingleShotTimerTask;
 /**
  * FTC Team 25: Created by Katelyn Biesiadecki on 11/5/2016.
  */
-@Autonomous(name = "Daisy: Autonomous", group = "Team25")
+@Autonomous(name = "Daisy: Beacon Autonomous", group = "Team25")
+@Disabled
 public class DaisyBeaconAutonomous extends Robot
 {
     private DcMotor frontLeft;
@@ -33,6 +35,7 @@ public class DaisyBeaconAutonomous extends Robot
     private DcMotor conveyor;
     private Servo leftPusher;
     private Servo rightPusher;
+    private Servo swinger;
     private ColorSensor colorSensor;
     private OpticalDistanceSensor frontOds;
     private OpticalDistanceSensor backOds;
@@ -142,6 +145,8 @@ public class DaisyBeaconAutonomous extends Robot
             launched = true;
         } else {
             // Begin to approach the beacon.
+            ptt.addData("Approaching beacon work", "!");
+           swinger.setPosition(0.1);
             this.addTask(new DeadReckonTask(this, beaconPath, frontLightCriteria) {
                 @Override
                 public void handleEvent(RobotEvent e)
@@ -161,6 +166,8 @@ public class DaisyBeaconAutonomous extends Robot
     private void doTurnOnLine()
     {
         // Turn on the white line to align the robot, then activate the beacon.
+
+        ptt.addData("Doing turn on line work", "!");
         this.addTask(new DeadReckonTask(this, lineDetectTurnPath, backLightCriteria) {
             @Override
             public void handleEvent(RobotEvent e)
@@ -169,6 +176,7 @@ public class DaisyBeaconAutonomous extends Robot
 
                 if (drEvent.kind == EventKind.SENSOR_SATISFIED) {
                     helper.doBeaconWork();
+                    ptt.addData("Doing beacon work", "!");
                 }
             }
         });
@@ -235,8 +243,13 @@ public class DaisyBeaconAutonomous extends Robot
         conveyor = hardwareMap.dcMotor.get("conveyor");
         leftPusher = hardwareMap.servo.get("leftPusher");
         rightPusher = hardwareMap.servo.get("rightPusher");
+        swinger = hardwareMap.servo.get("odsSwinger");
         colorSensor = hardwareMap.colorSensor.get("color");
         cdim = hardwareMap.deviceInterfaceModule.get("cdim");
+
+        leftPusher.setPosition(LEFT_STOW_POS);
+        rightPusher.setPosition(RIGHT_STOW_POS);
+        swinger.setPosition(0.7);
 
         // Optical Distance Sensor (front) setup.
         frontOds = hardwareMap.opticalDistanceSensor.get("frontLight");
@@ -250,6 +263,7 @@ public class DaisyBeaconAutonomous extends Robot
 
         // Line detect turn path setup.
         lineDetectTurnPath = new FourWheelGearedDriveDeadReckon(this, TICKS_PER_INCH, TICKS_PER_DEGREE, frontLeft, frontRight, rearLeft, rearRight);
+        lineDetectTurnPath.addSegment(DeadReckon.SegmentType.TURN, 60, TURN_SPEED);
 
         // Launch setup.
         runToPositionTask = new RunToEncoderValueTask(this, launcher, LAUNCH_POSITION, 1.0);
@@ -297,6 +311,10 @@ public class DaisyBeaconAutonomous extends Robot
         beaconPath = pathSetup(beaconChoice);
         deadReckonParkTask = new DeadReckonTask(this, parkPath);
         deadReckonBeaconTask = new DeadReckonTask(this, beaconPath);
-        addTask(runToPositionTask);
+       // if (actionChoice == AutonomousAction.LAUNCH_1 || actionChoice == AutonomousAction.LAUNCH_2) {
+        // ITF: make it so ^^ actually works...
+            addTask(runToPositionTask);
+        //helper.doBeaconWork();
+        //}
     }
 }
