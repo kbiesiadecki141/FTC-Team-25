@@ -17,7 +17,9 @@ public abstract class DeadReckon {
 
     public enum SegmentType {
         STRAIGHT,
-        TURN
+        TURN,
+        SIDEWAYS,
+        DIAGONAL
     }
 
     public enum SegmentState {
@@ -73,6 +75,7 @@ public abstract class DeadReckon {
     protected abstract void encodersOn();
     protected abstract void motorStraight(double speed);
     protected abstract void motorTurn(double speed);
+    protected abstract void motorSideways(double speed);
     protected abstract void motorStop();
 
     protected abstract boolean isBusy();
@@ -119,6 +122,9 @@ public abstract class DeadReckon {
     public void setTarget()
     {
         if (getCurrentSegment().type == SegmentType.STRAIGHT) {
+            this.target = Math.abs((int)(getCurrentSegment().distance * encoderTicksPerInch));
+        } else if (getCurrentSegment().type == SegmentType.SIDEWAYS) {
+            // Eventually, we may have a encoder ticks per (sideways) inch... but for now, this:
             this.target = Math.abs((int)(getCurrentSegment().distance * encoderTicksPerInch));
         } else {
             this.target = Math.abs((int)(getCurrentSegment().distance * encoderTicksPerDegree));

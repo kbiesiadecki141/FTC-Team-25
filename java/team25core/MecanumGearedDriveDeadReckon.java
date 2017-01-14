@@ -1,22 +1,18 @@
+
 package team25core;
 
 /*
- * Created by izzielau on 1/6/2017.
+ * FTC Team 25: Created by Katelyn Biesiadecki on 12/11/2016.
  */
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.GyroSensor;
 import com.qualcomm.robotcore.util.RobotLog;
 
-public class FourWheelPivotTurnDeadReckon extends DeadReckon {
+public class MecanumGearedDriveDeadReckon extends DeadReckon {
 
-    public enum TurningSide {
-        LEFT,
-        RIGHT,
-    }
-
-    private double pivotMultiplier;
-    private TurningSide turningSide;
+    private int targetPosition;
+    public int lCurrentPosition;
 
     DcMotor frontRightMotor;
     DcMotor frontLeftMotor;
@@ -27,7 +23,7 @@ public class FourWheelPivotTurnDeadReckon extends DeadReckon {
     /*
      * Assumes that both motors are on the same controller.
      */
-    public FourWheelPivotTurnDeadReckon(Robot robot, int encoderTicksPerInch, GyroSensor gyroSensor, DcMotor motorLeftFront, DcMotor motorRightFront, DcMotor motorLeftRear, DcMotor motorRightRear)
+    public MecanumGearedDriveDeadReckon(Robot robot, int encoderTicksPerInch, GyroSensor gyroSensor, DcMotor motorLeftFront, DcMotor motorRightFront, DcMotor motorLeftRear, DcMotor motorRightRear)
     {
         super(robot, encoderTicksPerInch, gyroSensor, motorLeftFront);
 
@@ -41,7 +37,7 @@ public class FourWheelPivotTurnDeadReckon extends DeadReckon {
         rearRightMotor.setDirection(DcMotor.Direction.REVERSE);
     }
 
-    public FourWheelPivotTurnDeadReckon(Robot robot, int encoderTicksPerInch, int encoderTicksPerDegree, DcMotor motorRightFront, DcMotor motorRightRear, DcMotor motorLeftFront, DcMotor motorLeftRear)
+    public MecanumGearedDriveDeadReckon(Robot robot, int encoderTicksPerInch, int encoderTicksPerDegree, DcMotor motorLeftFront, DcMotor motorRightFront, DcMotor motorLeftRear, DcMotor motorRightRear)
     {
         super(robot, encoderTicksPerInch, encoderTicksPerDegree, motorLeftFront);
 
@@ -53,12 +49,6 @@ public class FourWheelPivotTurnDeadReckon extends DeadReckon {
 
         frontRightMotor.setDirection(DcMotor.Direction.REVERSE);
         rearRightMotor.setDirection(DcMotor.Direction.REVERSE);
-    }
-
-    public void setMultiplierSide(double multiplier, TurningSide side)
-    {
-        turningSide = side;
-        pivotMultiplier = multiplier;
     }
 
     @Override
@@ -91,24 +81,52 @@ public class FourWheelPivotTurnDeadReckon extends DeadReckon {
     @Override
     protected void motorTurn(double speed)
     {
-        if (turningSide == TurningSide.RIGHT) {
-            frontLeftMotor.setPower(speed);
-            rearLeftMotor.setPower(speed);
-            frontRightMotor.setPower(-(1/pivotMultiplier) * speed);
-            rearRightMotor.setPower(-(1/pivotMultiplier) * speed);
-        } else if (turningSide == TurningSide.LEFT) {
-            frontLeftMotor.setPower(-(1/pivotMultiplier) * speed);
-            rearLeftMotor.setPower(-(1/pivotMultiplier) * speed);
+        if (speed == 0) {
+            mmt = new MonitorMotorTask(robot, frontLeftMotor, target) {
+                @Override
+                public void handleEvent(RobotEvent event)
+                {
+                    MonitorMotorEvent ev = (MonitorMotorEvent)event;
+                    double speed;
+                    double e = Math.exp(1.0);
+
+                    double logVal = Math.pow(e, (5.6 * (ev.val / Math.abs(target))));
+                    if (currSegment.distance < 0) {
+                        speed = -(logVal / 100) - 0.01;
+                    } else {
+                        speed = (logVal / 100) + 0.01;
+                    }
+
+                    frontRightMotor.setPower(speed);
+                    rearRightMotor.setPower(speed);
+                    frontLeftMotor.setPower(-speed);
+                    rearLeftMotor.setPower(-speed);
+
+                }
+            };
+            robot.addTask(mmt);
+        } else {
             frontRightMotor.setPower(speed);
             rearRightMotor.setPower(speed);
-        } else {
-            RobotLog.e("251 Pivot turn, no side seected");
+            frontLeftMotor.setPower(-speed);
+            rearLeftMotor.setPower(-speed);
         }
     }
 
-    @Override
-    protected void motorSideways(double speed) {
+    protected void motorDiagonal(double speed)
+    {
+        // Diagonal left backward.
+        frontLeftMotor.setPower(speed);
+        rearRightMotor.setPower(speed);
+    }
 
+    @Override
+    protected void motorSideways(double speed)
+    {
+        frontLeftMotor.setPower(-speed);
+        rearLeftMotor.setPower(speed);
+        frontRightMotor.setPower(speed);
+        rearRightMotor.setPower(-speed);
     }
 
     @Override
