@@ -4,6 +4,7 @@ package team25core;
  */
 
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.RobotLog;
 
 public class SingleShotTimerTask extends RobotTask {
 
@@ -47,6 +48,13 @@ public class SingleShotTimerTask extends RobotTask {
     public void stop()
     {
         robot.removeTask(this);
+    }
+
+    @Override
+    public String toString()
+    {
+        RobotLog.i("Single Shot Timer Progress: %d milliseconds out of %d milliseconds", timer.time(), timeout);
+        return "Single Shot Timer Task running";
     }
 
     @Override

@@ -95,6 +95,13 @@ public class DeadReckonTask extends RobotTask {
     }
 
     @Override
+    public String toString()
+    {
+        RobotLog.i("141 Segment: %d", num);
+        return "Dead Reckon Task running";
+    }
+
+    @Override
     public boolean timeslice()
     {
         DeadReckon.Segment segment;
@@ -176,7 +183,7 @@ public class DeadReckonTask extends RobotTask {
         case WAIT:
             waitState++;
             /*
-             * About 1/2 a second give or take, just insure we are stopped before moving on.
+             * About 1/2 a second give or take, just ensure we are stopped before moving on.
              */
             if (waitState > 50) {
                 segment.state = DeadReckon.SegmentState.DONE;

@@ -8,8 +8,8 @@ import com.qualcomm.robotcore.util.RobotLog;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public abstract class Robot extends OpMode {
-
+public abstract class Robot extends OpMode
+{
     ConcurrentLinkedQueue<RobotTask> tasks;
     ConcurrentLinkedQueue<RobotEvent> events;
 
@@ -40,6 +40,13 @@ public abstract class Robot extends OpMode {
     public boolean taskRunning(RobotTask task)
     {
         return tasks.contains(task);
+    }
+
+    public void dumpTask()
+    {
+        for (RobotTask t:tasks) {
+            RobotLog.i("141 %s", t.toString());
+        }
     }
 
     public void init()
